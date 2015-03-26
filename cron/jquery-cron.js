@@ -40,55 +40,6 @@
 
     var defaults = {
         initial : "* * * * *",
-        minuteOpts : {
-            minWidth  : 100, // only applies if columns and itemWidth not set
-            itemWidth : 30,
-            columns   : 4,
-            rows      : undefined,
-            title     : "Minutes Past the Hour"
-        },
-        timeHourOpts : {
-            minWidth  : 100, // only applies if columns and itemWidth not set
-            itemWidth : 20,
-            columns   : 2,
-            rows      : undefined,
-            title     : "Time: Hour"
-        },
-        domOpts : {
-            minWidth  : 100, // only applies if columns and itemWidth not set
-            itemWidth : 30,
-            columns   : undefined,
-            rows      : 10,
-            title     : "Day of Month"
-        },
-        monthOpts : {
-            minWidth  : 100, // only applies if columns and itemWidth not set
-            itemWidth : 100,
-            columns   : 2,
-            rows      : undefined,
-            title     : undefined
-        },
-        dowOpts : {
-            minWidth  : 100, // only applies if columns and itemWidth not set
-            itemWidth : undefined,
-            columns   : undefined,
-            rows      : undefined,
-            title     : undefined
-        },
-        timeMinuteOpts : {
-            minWidth  : 100, // only applies if columns and itemWidth not set
-            itemWidth : 20,
-            columns   : 4,
-            rows      : undefined,
-            title     : "Time: Minute"
-        },
-        effectOpts : {
-            openSpeed      : 400,
-            closeSpeed     : 400,
-            openEffect     : "slide",
-            closeEffect    : "slide",
-            hideOnMouseOut : true
-        },
         url_set : undefined,
         customValues : undefined,
         periods : ["minute", "hour", "day", "week", "month", "year"],
@@ -275,15 +226,6 @@
             // init options
             var options = opts ? opts : {}; /* default to empty obj */
             var o = $.extend([], defaults, options);
-            var eo = $.extend({}, defaults.effectOpts, options.effectOpts);
-            $.extend(o, {
-                minuteOpts     : $.extend({}, defaults.minuteOpts, eo, options.minuteOpts),
-                domOpts        : $.extend({}, defaults.domOpts, eo, options.domOpts),
-                monthOpts      : $.extend({}, defaults.monthOpts, eo, options.monthOpts),
-                dowOpts        : $.extend({}, defaults.dowOpts, eo, options.dowOpts),
-                timeHourOpts   : $.extend({}, defaults.timeHourOpts, eo, options.timeHourOpts),
-                timeMinuteOpts : $.extend({}, defaults.timeMinuteOpts, eo, options.timeMinuteOpts)
-            });
 
             // error checking
             if (hasError(this, o)) { return this; }
