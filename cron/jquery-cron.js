@@ -91,6 +91,7 @@
         },
         url_set : undefined,
         customValues : undefined,
+        periods : ["minute", "hour", "day", "week", "month", "year"],
         onChange: undefined, // callback function each time value changes
     };
 
@@ -135,13 +136,6 @@
                 "Friday", "Saturday"];
     for (var i = 0; i < days.length; i++) {
         str_opt_dow += "<option value='"+i+"'>" + days[i] + "</option>\n";
-    }
-
-    // options for period
-    var str_opt_period = "";
-    var periods = ["minute", "hour", "day", "week", "month", "year"];
-    for (var i = 0; i < periods.length; i++) {
-        str_opt_period += "<option value='"+periods[i]+"'>" + periods[i] + "</option>\n";
     }
 
     // display matrix
@@ -295,6 +289,12 @@
             if (hasError(this, o)) { return this; }
 
             // ---- define select boxes in the right order -----
+
+            // options for period
+            var str_opt_period = "";
+            for (var i = 0; i < o.periods.length; i++) {
+                str_opt_period += "<option value='"+o.periods[i]+"'>" + o.periods[i] + "</option>\n";
+            }
 
             var block = [], custom_periods = "", cv = o.customValues;
             if (defined(cv)) { // prepend custom values if specified
