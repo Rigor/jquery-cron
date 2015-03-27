@@ -48,20 +48,31 @@
 
     // -------  build some static data -------
 
+    function option(options)  {
+        return ' <option value="'+options.value+'"">'+options.text+'</option> ';
+    }
+
+    function span(options) {
+        return ' <span class="'+options["class"]+'"">'+options.text+'</span> ';
+    }
+
+    function selectOptions(options) {
+        return ' <select class="'+options["class"]+'"">'+options.text+'</select> ';
+    }
+
     // options for minutes in an hour
     var str_opt_mih = "";
     for (var i = 0; i < 60; i++) {
         var j = (i < 10)? "0":"";
-        str_opt_mih += "<option value='"+i+"'>" + j +  i + "</option>\n";
+        str_opt_mih += option({ text: j+i, value: i });
     }
 
     // options for hours in a day
     var str_opt_hid = "";
     for (var i = 0; i < 24; i++) {
         var j = (i < 10)? "0":"";
-        str_opt_hid += "<option value='"+i+"'>" + j + i + "</option>\n";
+        str_opt_hid += option({ text: j+i, value: i });
     }
-
     // options for days of month
     var str_opt_dom = "";
     for (var i = 1; i < 32; i++) {
@@ -69,7 +80,7 @@
         else if (i == 2 || i == 22) { var suffix = "nd"; }
         else if (i == 3 || i == 23) { var suffix = "rd"; }
         else { var suffix = "th"; }
-        str_opt_dom += "<option value='"+i+"'>" + i + suffix + "</option>\n";
+        str_opt_dom += option({ text: i + suffix, value: i });
     }
 
     // options for months
@@ -78,7 +89,7 @@
                   "May", "June", "July", "August",
                   "September", "October", "November", "December"];
     for (var i = 0; i < months.length; i++) {
-        str_opt_month += "<option value='"+(i+1)+"'>" + months[i] + "</option>\n";
+        str_opt_month += option({ text: months[i], value: i+1 });
     }
 
     // options for day of week
@@ -86,7 +97,7 @@
     var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
                 "Friday", "Saturday"];
     for (var i = 0; i < days.length; i++) {
-        str_opt_dow += "<option value='"+i+"'>" + days[i] + "</option>\n";
+        str_opt_dow += option({ text: days[i], value: i });
     }
 
     // display matrix
@@ -235,19 +246,18 @@
             // options for period
             var str_opt_period = "";
             for (var i = 0; i < o.periods.length; i++) {
-                str_opt_period += "<option value='"+o.periods[i]+"'>" + o.periods[i] + "</option>\n";
+                str_opt_period += option({ text: o.periods[i], value: o.periods[i] });
             }
 
             var block = [], custom_periods = "", cv = o.customValues;
             if (defined(cv)) { // prepend custom values if specified
                 for (var key in cv) {
-                    custom_periods += "<option value='" + cv[key] + "'>" + key + "</option>\n";
+                    custom_periods += option({ text: key, value: cv[key] });
                 }
             }
 
-            block["period"] = $("<span class='cron-period'>"
-                    + "Every <select name='cron-period'>" + custom_periods
-                    + str_opt_period + "</select> </span>")
+            var periodSelect = selectOptions({ text: custom_periods + str_opt_period, name: "cron-period" });
+            block["period"] = $(span({ text: "Every " + periodSelect, 'class': "cron-period" }))
                 .appendTo(this)
                 .data("root", this);
 
@@ -255,51 +265,46 @@
             select.bind("change.cron", event_handlers.periodChanged)
                   .data("root", this);
 
-            block["dom"] = $("<span class='cron-block cron-block-dom'>"
-                    + " on the <select name='cron-dom'>" + str_opt_dom
-                    + "</select> </span>")
+            var blockSelect = selectOptions({ text: str_opt_dom, name: "cron-dom" });
+            block["dom"] = $(span({ text: " on the " + blockSelect, 'class': "cron-block cron-block-dom"}))
                 .appendTo(this)
                 .data("root", this);
 
             select = block["dom"].find("select").data("root", this);
 
-            block["month"] = $("<span class='cron-block cron-block-month'>"
-                    + " of <select name='cron-month'>" + str_opt_month
-                    + "</select> </span>")
+            var monthSelect = selectOptions({ text: str_opt_month, name: "cron-month" });
+            block["month"] = $(span({ text: " of " + monthSelect, 'class': "cron-block cron-block-month" }))
                 .appendTo(this)
                 .data("root", this);
 
             select = block["month"].find("select").data("root", this);
 
-            block["mins"] = $("<span class='cron-block cron-block-mins'>"
-                    + " at <select name='cron-mins'>" + str_opt_mih
-                    + "</select> minutes past the hour </span>")
+            var minSelect = selectOptions({ text: str_opt_mih, name: "cron-mins" });
+            block["mins"] = $(span({ text: " at " + minSelect + " minutes past the hour ", 'class': "cron-block cron-block-mins" }))
                 .appendTo(this)
                 .data("root", this);
 
             select = block["mins"].find("select").data("root", this);
 
-            block["dow"] = $("<span class='cron-block cron-block-dow'>"
-                    + " on <select name='cron-dow'>" + str_opt_dow
-                    + "</select> </span>")
+            var dowSelect = selectOptions({ text: str_opt_dow, name: "cron-dow" });
+            block["dow"] = $(span({ text: " on " + dowSelect, 'class': "cron-block cron-block-dow" }))
                 .appendTo(this)
                 .data("root", this);
 
             select = block["dow"].find("select").data("root", this);
 
-            block["time"] = $("<span class='cron-block cron-block-time'>"
-                    + " at <select name='cron-time-hour' class='cron-time-hour'>" + str_opt_hid
-                    + "</select>:<select name='cron-time-min' class='cron-time-min'>" + str_opt_mih
-                    + " </span>")
+            var hourSelect = selectOptions({ text: str_opt_hid, name: "cron-time-hour", 'class': "cron-time-hour" }),
+                minSelect = selectOptions({ text: str_opt_mih, name: "cron-time-min", 'class': "cron-time-min" });
+
+            block["time"] = $(span({ text: " at " + hourSelect + ":" + minSelect, 'class': "cron-block cron-block-time" }))
                 .appendTo(this)
                 .data("root", this);
 
             select = block["time"].find("select.cron-time-hour").data("root", this);
             select = block["time"].find("select.cron-time-min").data("root", this);
 
-            block["controls"] = $("<span class='cron-controls'>&laquo; save "
-                    + "<span class='cron-button cron-button-save'></span>"
-                    + " </span>")
+            var saveButton = span({ 'class': "cron-button cron-button-save" });
+            block["controls"] = $(span({ text: " &laquo; save " + saveButton, 'class': "cron-controls"}))
                 .appendTo(this)
                 .data("root", this)
                 .find("span.cron-button-save")
