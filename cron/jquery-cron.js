@@ -82,6 +82,7 @@
         else { var suffix = "th"; }
         str_opt_dom += option({ text: i + suffix, value: i });
     }
+    str_opt_dom += option({ text: "last day of the month", value: "L" });
 
     // options for months
     var str_opt_month = "";
@@ -111,12 +112,12 @@
     };
 
     var combinations = {
-        "minute" : /^(\*\s){4}\*$/,                    // "* * * * *"
-        "hour"   : /^\d{1,2}\s(\*\s){3}\*$/,           // "? * * * *"
-        "day"    : /^(\d{1,2}\s){2}(\*\s){2}\*$/,      // "? ? * * *"
-        "week"   : /^(\d{1,2}\s){2}(\*\s){2}\d{1,2}$/, // "? ? * * ?"
-        "month"  : /^(\d{1,2}\s){3}\*\s\*$/,           // "? ? ? * *"
-        "year"   : /^(\d{1,2}\s){4}\*$/                // "? ? ? ? *"
+        "minute" : /^(\*\s){4}\*$/,                                          // "* * * * *"
+        "hour"   : /^\d{1,2}(,\d{1,2})*\s(\*\s){3}\*$/,                      // "? * * * *"
+        "day"    : /^(\d{1,2}(,\d{1,2})*\s){2}(\*\s){2}\*$/,                 // "? ? * * *"
+        "week"   : /^(\d{1,2}(,\d{1,2})*\s){2}(\*\s){2}\d{1,2}(,\d{1,2})*$/, // "? ? * * ?"
+        "month"  : /^((L|\d{1,2})(,\d{1,2})*(,L)?\s){3}\*\s\*$/,             // "? ? ? * *"
+        "year"   : /^((L|\d{1,2})(,\d{1,2})*(,L)?\s){4}\*$/                  // "? ? ? ? *"
     };
 
     // ------------------ internal functions ---------------
@@ -138,7 +139,7 @@
         }
 
         // check format of initial cron value
-        var valid_cron = /^((\d{1,2}|\*)\s){4}(\d{1,2}|\*)$/
+        var valid_cron = /^(((L|\d{1,2})(,\d{1,2})*(,L)?|\*)\s){4}(\d{1,2}(,\d{1,2})*|\*)$/
         if (typeof cron_str != "string" || !valid_cron.test(cron_str)) {
             $.error("cron: invalid initial value");
             return undefined;
@@ -152,7 +153,11 @@
         for (var i = 0; i < d.length; i++) {
             if (d[i] == "*") continue;
             var v = parseInt(d[i]);
-            if (defined(v) && v <= maxval[i] && v >= minval[i]) continue;
+            if (isNaN(v)) {
+                if (d[i] === "L") continue;
+            } else if (defined(v) && v <= maxval[i] && v >= minval[i]) {
+                continue;
+            }
 
             $.error("cron: invalid value found (col "+(i+1)+") in " + o.initial);
             return undefined;
