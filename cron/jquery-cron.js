@@ -50,8 +50,13 @@
 
     function selectOptions(options) {
         options = options || {};
-        var multiple = defined(options.multiple) ? 'multiple="multiple"' : '';
-        return ' <select class="'+options["class"]+'" '+multiple+'>'+options.text+'</select> ';
+        var multiple = defined(options.multiple) ? ' multiple="multiple" ' : '';
+        return ' <select '
+                    + 'title="' + options.title + '" '
+                    + 'class="' + options["class"]+'" '
+                    + multiple + options.data + '> '
+                    + options.text
+                +'</select> ';
     }
 
     function arrayToOptions(array) {
@@ -79,6 +84,7 @@
         var j = (i < 10)? "0":"";
         str_opt_hid += option({ text: j+i, value: i });
     }
+
     // options for days of month
     var str_opt_dom = "";
     for (var i = 1; i < 32; i++) {
@@ -162,6 +168,7 @@
             'class': "cron-time-min"
         },
         onChange: undefined, // callback function each time value changes,
+        afterCreate: undefined,
     };
 
     // ------------------ internal functions ---------------
@@ -239,6 +246,7 @@
         var b = c.data("block");
         var min = hour = day = month = dow = "*";
         var selectedPeriod = b["period"].find("select").val();
+
         switch (selectedPeriod) {
             case "minute":
                 break;
@@ -295,7 +303,6 @@
                 timeHourOpts   : $.extend({}, defaults.timeHourOpts, options.timeHourOpts),
                 timeMinuteOpts : $.extend({}, defaults.timeMinuteOpts, options.timeMinuteOpts)
             });
-
             var str_opt_period = arrayToOptions(o.periods);
             $.extend(o.periodOpts, { text: str_opt_period });
 
@@ -367,6 +374,11 @@
                     .data("root", this)
                     .end();
 
+            var after_create = o.afterCreate;
+            if (defined(after_create) && $.isFunction(after_create)) {
+                after_create();
+            }
+
             this.find("select").bind("change.cron-callback", event_handlers.somethingChanged);
             this.data("options", o).data("block", block); // store options and block pointer
             this.data("current_value", o.initial); // remember base value to detect changes
@@ -403,7 +415,7 @@
                     if (tgt == "time") {
                         var btgt = block[tgt].find("select.cron-time-hour").val(v["hour"]);
                         btgt = block[tgt].find("select.cron-time-min").val(v["mins"]);
-                    } else {;
+                    } else {
                         var btgt = block[tgt].find("select").val(v[tgt]);
                     }
                 }
