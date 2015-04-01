@@ -3,13 +3,12 @@
 <head>
     <meta charset="utf-8">
     <title>jquery-cron : a jQuery plugin</title>
-    <link type="text/css" href="gentleSelect/jquery-gentleSelect.css" rel="stylesheet" />
     <link type="text/css" href="cron/jquery-cron.css" rel="stylesheet" />
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
-    <script type="text/javascript" src="gentleSelect/jquery-gentleSelect-min.js"></script>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="cron/jquery-cron.js"></script>
 
-    <style>
+<style>
     * { margin: 0; padding: 0; }
     body { font-family: Helvetica,Arial,sans-serif; color: #222; background-color: #ddd;line-height: 24px; }
     ul { margin-left: 20px; }
@@ -31,6 +30,9 @@
     $(document).ready(function() {
         $('#example1').cron({
             initial: "42 3 * * 5",
+            monthOpts: { multiple: "multiple" },
+            domOpts: { multiple: "multiple" },
+            periods: ["day", "week", "month", "year"],
             onChange: function() {
                 $('#example1-val').text($(this).cron("value"));
             }
@@ -39,16 +41,14 @@
             initial: "42 3 * * 5",
             onChange: function() {
                 $('#example1b-val').text($(this).cron("value"));
-            },
-            useGentleSelect: true
+            }
         });
         $('#example2').cron({
             initial: "42 3 * * 5",
             effectOpts: {
                 openEffect: "fade",
                 openSpeed: "slow"
-            },
-            useGentleSelect: true
+            }
         });
         $('#example3').cron({
             initial: "*/5 * * * *",
@@ -58,15 +58,13 @@
             customValues: {
                 "5 Minutes" : "*/5 * * * *",
                 "2 Hours on Weekends" : "0 */2 * * 5,6"
-            },
-            useGentleSelect: true
+            }
         });
         $('#example4').cron({
             initial: "42 3 * * 5",
             onChange: function() {
                 $('#example4-val').text($(this).cron("value"));
-            },
-            useGentleSelect: true
+            }
         });
     });
     </script>
