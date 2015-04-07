@@ -50,13 +50,13 @@
 
     function selectOptions(options) {
         options = options || {};
-        var multiple = defined(options.multiple) ? ' multiple="multiple" ' : '';
-        return ' <select '
-                    + 'title="' + options.title + '" '
-                    + 'class="' + options["class"]+'" '
-                    + multiple + options.data + '> '
-                    + options.text
-                +'</select> ';
+        var title = 'title="' + (options.title || '') + '"',
+            style = 'class="' + (options["class"] || '') + '"',
+            data = options.data || '',
+            text = options.text || '',
+            multiple = options.multiple ? ' multiple="multiple" ' : '';
+
+        return ' <select ' + [title, style, data, multiple].join(" ") + '>' + text + '</select>';
     }
 
     function arrayToOptions(array) {
@@ -65,6 +65,36 @@
             options += option({ text: array[i], value: array[i] });
         }
         return options;
+    }
+
+    function createTimezoneSelector(selector, options) {
+        var options = options || {};
+        var initial = options.initial,
+            useRails = options.rails;
+
+        try {
+            $(selector).timezones();
+
+            if (useRails) {
+                var jsTimezones = $(selector).find("option");
+                $.each(jsTimezones, function(i, tz) {
+                    var option = $(tz);
+                    var newZone = RailsTimeZone.to(option.val());
+                    if (newZone) {
+                        option.text("(GMT"+option.data("offset")+") " + newZone);
+                        option.val(newZone);
+                    } else {
+                        option.remove();
+                    }
+                });
+            }
+            $('.cron-timezone').val(initial || moment().zone());
+
+        } catch (error) {
+            throw "Timezones not loaded!"
+                + " Make sure your options are correct and all necessary libraries are loaded."
+                + "\nhttp://www.jqueryscript.net/time-clock/Easy-Timezone-Picker-with-jQuery-Moment-js-Timezones.html\n" + error.message;
+        }
     }
 
     // options for period
@@ -83,6 +113,13 @@
     for (var i = 0; i < 24; i++) {
         var j = (i < 10)? "0":"";
         str_opt_hid += option({ text: j+i, value: i });
+    }
+
+    // options for twelve-hour format
+    var str_opt_twelve_hour_fmt = "";
+    for (var i = 1; i <= 12; i++) {
+        var j = (i < 10)? "0":"";
+        str_opt_twelve_hour_fmt += option({ text: j+i, value: i%12 });
     }
 
     // options for days of month
@@ -117,10 +154,10 @@
     var toDisplay = {
         "minute" : [],
         "hour"   : ["mins"],
-        "day"    : ["time"],
-        "week"   : ["dow", "time"],
-        "month"  : ["dom", "time"],
-        "year"   : ["dom", "month", "time"]
+        "day"    : ["time", "timezone"],
+        "week"   : ["dow", "time", "timezone"],
+        "month"  : ["dom", "time", "timezone"],
+        "year"   : ["dom", "month", "time", "timezone"]
     };
 
     var combinations = {
@@ -167,9 +204,14 @@
             name: "cron-time-min",
             'class': "cron-time-min"
         },
+        timezoneOpts: {
+            enabled: false
+        },
         onChange: undefined, // callback function each time value changes,
         afterCreate: undefined,
     };
+
+    var twelve_hour_format = false;
 
     // ------------------ internal functions ---------------
     function defined(obj) {
@@ -242,48 +284,74 @@
         return false;
     }
 
-    function getCurrentValue(c) {
-        var b = c.data("block");
-        var min = hour = day = month = dow = "*";
+    function notEvery(timeframe) {
+        return timeframe !== "*";
+    }
+
+    function toIntArray(values) {
+        if (notEvery(values)) {
+            if (typeof values == "string") { values = values.split(","); }
+            if (values) {
+                values = values.map(function(i){ return parseInt(i) });
+            }
+            return values;
+        }
+    }
+
+    function getFormValues(b) {
         var selectedPeriod = b["period"].find("select").val();
 
-        switch (selectedPeriod) {
-            case "minute":
-                break;
+        var cron = {
+            min: "*",
+            hour: "*",
+            day: "*",
+            month: "*",
+            dow: "*",
+            selectedPeriod: selectedPeriod
+        };
 
-            case "hour":
-                min = b["mins"].find("select").val();
-                break;
+        var fields = {
+            minute: ["mins"],
+            day: ["min", "hour"],
+            week: ["min", "hour", "dow"],
+            month: ["min", "hour", "day"],
+            year: ["min", "hour", "day", "month"]
+        };
 
-            case "day":
-                min  = b["time"].find("select.cron-time-min").val();
-                hour = b["time"].find("select.cron-time-hour").val();
-                break;
+        var fieldValues = {
+            mins:  b["mins"].find("select").val(),
+            min:   b["time"].find("select.cron-time-min").val(),
+            hour:  b["time"].find("select.cron-time-hour").val(),
+            day:   b["dom"].find("select").val(),
+            month: b["month"].find("select").val(),
+            dow:   b["dow"].find("select").val()
+        };
 
-            case "week":
-                min  = b["time"].find("select.cron-time-min").val();
-                hour = b["time"].find("select.cron-time-hour").val();
-                dow  =  b["dow"].find("select").val();
-                break;
-
-            case "month":
-                min  = b["time"].find("select.cron-time-min").val();
-                hour = b["time"].find("select.cron-time-hour").val();
-                day  = b["dom"].find("select").val();
-                break;
-
-            case "year":
-                min  = b["time"].find("select.cron-time-min").val();
-                hour = b["time"].find("select.cron-time-hour").val();
-                day  = b["dom"].find("select").val();
-                month = b["month"].find("select").val();
-                break;
-
-            default:
-                // we assume this only happens when customValues is set
-                return selectedPeriod;
+        if (twelve_hour_format) {
+            var is_pm = b["time"].find("select.cron-time-am-pm").val() == "pm";
+            if (is_pm) {
+                fieldValues.hour = parseInt(fieldValues.hour) + 12;
+            }
         }
-        return [min, hour, day, month, dow].join(" ");
+
+        if (fields[selectedPeriod]) {
+            $.each(fields[selectedPeriod], function(i, field){
+                var currentValue = cron[field];
+                cron[field] = fieldValues[field] || currentValue;
+            });
+        } else {
+            // we assume this only happens when customValues is set
+            return selectedPeriod;
+        }
+
+        return cron;
+    }
+
+    function getCurrentValue(c) {
+        var b = c.data("block");
+        var cron = getFormValues(b);
+
+        return [cron.min, cron.hour, cron.day, cron.month, cron.dow].join(" ");
     }
 
     // -------------------  PUBLIC METHODS -----------------
@@ -301,8 +369,10 @@
                 monthOpts      : $.extend({}, defaults.monthOpts, options.monthOpts),
                 dowOpts        : $.extend({}, defaults.dowOpts, options.dowOpts),
                 timeHourOpts   : $.extend({}, defaults.timeHourOpts, options.timeHourOpts),
-                timeMinuteOpts : $.extend({}, defaults.timeMinuteOpts, options.timeMinuteOpts)
+                timeMinuteOpts : $.extend({}, defaults.timeMinuteOpts, options.timeMinuteOpts),
+                timezoneOpts   : $.extend({}, defaults.timezoneOpts, options.timezoneOpts),
             });
+
             var str_opt_period = arrayToOptions(o.periods);
             $.extend(o.periodOpts, { text: str_opt_period });
 
@@ -356,14 +426,36 @@
 
             select = block["dow"].find("select").data("root", this);
 
+
+            var am_pm = "";
+            if (o.twelve_hour_format) {
+                twelve_hour_format = true;
+                o.timeHourOpts["text"] = str_opt_twelve_hour_fmt;
+                am_pm = selectOptions({
+                    text: arrayToOptions(["am", "pm"]),
+                    "class": "cron-time-am-pm"
+                });
+                $(am_pm).val("am");
+            }
+
             var hourSelect = selectOptions(o.timeHourOpts),
                 minSelect = selectOptions(o.timeMinuteOpts);
-            block["time"] = $(span({ text: " at " + hourSelect + ":" + minSelect, 'class': "cron-block cron-block-time" }))
+            block["time"] = $(span({ text: " at " + hourSelect + ":" + minSelect + " " + am_pm, 'class': "cron-block cron-block-time" }))
                 .appendTo(this)
                 .data("root", this);
 
             select = block["time"].find("select.cron-time-hour").data("root", this);
             select = block["time"].find("select.cron-time-min").data("root", this);
+            select = block["time"].find("select.cron-time-am-pm").data("root", this);
+
+            if (o.timezoneOpts.enabled) {
+                var timezoneSelect = selectOptions({ text: "", "class":"cron-timezone" });
+                block["timezone"] = $(span({ text: " in the timezone " + timezoneSelect, 'class': "cron-block cron-block-timezone" }))
+                    .appendTo(this)
+                    .data("root", this);
+                select = block["timezone"].find("select").data("root", this);
+                createTimezoneSelector(select, o.timezoneOpts);
+            }
 
             var saveButton = span({ 'class': "cron-button cron-button-save" });
             block["controls"] = $(span({ text: " &laquo; save " + saveButton, 'class': "cron-controls"}))
@@ -413,10 +505,23 @@
                 for (var i = 0; i < targets.length; i++) {
                     var tgt = targets[i];
                     if (tgt == "time") {
+                        var btgt = block[tgt];
+                        if (twelve_hour_format) {
+                            var hour = parseInt(v["hour"]);
+                            var is_pm = hour >= 12;
+                            if (is_pm) {
+                                block[tgt].find(".cron-time-am-pm").val("pm");
+                                v["hour"] = hour - 12;
+                            }
+                        }
                         var btgt = block[tgt].find("select.cron-time-hour").val(v["hour"]);
                         btgt = block[tgt].find("select.cron-time-min").val(v["mins"]);
-                    } else {
-                        var btgt = block[tgt].find("select").val(v[tgt]);
+                    } else if (tgt !== "timezone") {
+                        var btgt = block[tgt].find("select");
+                        if (btgt.attr("multiple")) {
+                            v[tgt] = v[tgt].split(",");
+                        }
+                        btgt.val(v[tgt]);
                     }
                 }
             }
@@ -426,6 +531,17 @@
             bp.trigger("change");
 
             return this;
+        },
+
+        timezone : function(timezone_str) {
+            var timezone_select = this.data("block")["timezone"].find("select.cron-timezone");
+            return timezone_select.val();
+        },
+
+        timezoneOffset : function(offset_str) {
+            var timezone_select = this.data("block")["timezone"].find('select.cron-timezone'),
+                offset = timezone_select.find('option:selected').data('offset');
+            return offset;
         }
 
     };
@@ -441,7 +557,9 @@
             if (toDisplay.hasOwnProperty(period)) { // not custom value
                 var b = toDisplay[$(this).val()];
                 for (var i = 0; i < b.length; i++) {
-                    block[b[i]].show();
+                    if ((b[i] !== "timezone") || (opt.timezoneOpts.enabled)) {
+                        block[b[i]].show();
+                    }
                 }
             }
         },

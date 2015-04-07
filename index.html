@@ -6,6 +6,8 @@
     <link type="text/css" href="cron/jquery-cron.css" rel="stylesheet" />
 
     <script type="text/javascript" src="https://code.jquery.com/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="cron/timezones.full.min.js"></script>
+    <script type="text/javascript" src="cron/rails-timezone.min.js"></script>
     <script type="text/javascript" src="cron/jquery-cron.js"></script>
 
 <style>
@@ -29,12 +31,14 @@
     <script type="text/javascript">
     $(document).ready(function() {
         $('#example1').cron({
-            initial: "42 3 * * 5",
-            monthOpts: { multiple: "multiple" },
-            domOpts: { multiple: "multiple" },
-            periods: ["day", "week", "month", "year"],
+            initial: "42 3 * * 2,4,6",
+            dowOpts: { multiple: true },
+            periods: ["day", "week", "month"],
+            twelve_hour_format: true,
+            timezoneOpts: { enabled: true, initial: "Eastern Time (US & Canada)", rails: true },
             onChange: function() {
                 $('#example1-val').text($(this).cron("value"));
+                $('#example1-zone').text($(this).cron("timezone"));
             }
         });
         $('#example1b').cron({
@@ -88,6 +92,7 @@
     <div class='example'>
     <div id='example1'></div>
     <p>Generated cron entry: <span class='example-text' id='example1-val'></span></p>
+    <p>Generated cron zone: <span class='example-text' id='example1-zone'></span></p>
     </div>
     
     Or, with <a href='#option-useGentleSelect'>useGentleSelect</a> enabled:
