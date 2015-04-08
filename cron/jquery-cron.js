@@ -41,22 +41,23 @@
     // -------  build some static data -------
 
     function option(options)  {
-        return ' <option value="'+options.value+'"">'+options.text+'</option> ';
+        return ' <option value="'+options.value+'">'+options.text+'</option> ';
     }
 
     function span(options) {
-        return ' <span class="'+options["class"]+'"">'+options.text+'</span> ';
+        return ' <span class="'+options["class"]+'">'+options.text+'</span> ';
     }
 
     function selectOptions(options) {
         options = options || {};
         var title = 'title="' + (options.title || '') + '"',
+            name = 'name="' + (options.name || '') + '"',
             style = 'class="' + (options["class"] || '') + '"',
             data = options.data || '',
             text = options.text || '',
             multiple = options.multiple ? ' multiple="multiple" ' : '';
 
-        return ' <select ' + [title, style, data, multiple].join(" ") + '>' + text + '</select>';
+        return ' <select ' + [title, name, style, data, multiple].join(" ") + '>' + text + '</select>';
     }
 
     function arrayToOptions(array) {
@@ -88,7 +89,10 @@
                     }
                 });
             }
-            $('.cron-timezone').val(initial || moment().zone());
+            $('select[name=cron-timezone]').val(initial || moment().zone());
+            if (options["class"]) {
+                $('select[name=cron-timezone]').addClass(options["class"]);
+            }
 
         } catch (error) {
             throw "Timezones not loaded!"
@@ -121,6 +125,8 @@
         var j = (i < 10)? "0":"";
         str_opt_twelve_hour_fmt += option({ text: j+i, value: i%12 });
     }
+
+    var str_opt_am_pm = arrayToOptions(["am", "pm"]);
 
     // options for days of month
     var str_opt_dom = "";
@@ -197,12 +203,14 @@
         timeHourOpts: {
             text: str_opt_hid,
             name: "cron-time-hour",
-            'class': "cron-time-hour"
         },
         timeMinuteOpts: {
             text: str_opt_mih,
             name: "cron-time-min",
-            'class': "cron-time-min"
+        },
+        timeAmPmOpts: {
+            text: str_opt_am_pm,
+            name: "cron-time-am-pm",
         },
         timezoneOpts: {
             enabled: false
@@ -320,15 +328,16 @@
 
         var fieldValues = {
             mins:  b["mins"].find("select").val(),
-            min:   b["time"].find("select.cron-time-min").val(),
-            hour:  b["time"].find("select.cron-time-hour").val(),
+            min:   b["time"].find("select[name=cron-time-min]").val(),
+            hour:  b["time"].find("select[name=cron-time-hour]").val(),
             day:   b["dom"].find("select").val(),
             month: b["month"].find("select").val(),
             dow:   b["dow"].find("select").val()
         };
 
+
         if (twelve_hour_format) {
-            var is_pm = b["time"].find("select.cron-time-am-pm").val() == "pm";
+            var is_pm = b["time"].find("select[name=cron-time-am-pm]").val() == "pm";
             if (is_pm) {
                 fieldValues.hour = parseInt(fieldValues.hour) + 12;
             }
@@ -370,6 +379,7 @@
                 dowOpts        : $.extend({}, defaults.dowOpts, options.dowOpts),
                 timeHourOpts   : $.extend({}, defaults.timeHourOpts, options.timeHourOpts),
                 timeMinuteOpts : $.extend({}, defaults.timeMinuteOpts, options.timeMinuteOpts),
+                timeAmPmOpts   : $.extend({}, defaults.timeAmPmOpts, options.timeAmPmOpts),
                 timezoneOpts   : $.extend({}, defaults.timezoneOpts, options.timezoneOpts),
             });
 
@@ -431,12 +441,10 @@
             if (o.twelve_hour_format) {
                 twelve_hour_format = true;
                 o.timeHourOpts["text"] = str_opt_twelve_hour_fmt;
-                am_pm = selectOptions({
-                    text: arrayToOptions(["am", "pm"]),
-                    "class": "cron-time-am-pm"
-                });
+                am_pm = selectOptions(o.timeAmPmOpts);
                 $(am_pm).val("am");
             }
+
 
             var hourSelect = selectOptions(o.timeHourOpts),
                 minSelect = selectOptions(o.timeMinuteOpts);
@@ -444,12 +452,12 @@
                 .appendTo(this)
                 .data("root", this);
 
-            select = block["time"].find("select.cron-time-hour").data("root", this);
-            select = block["time"].find("select.cron-time-min").data("root", this);
-            select = block["time"].find("select.cron-time-am-pm").data("root", this);
+            select = block["time"].find("select[name=cron-time-hour]").data("root", this);
+            select = block["time"].find("select[name=cron-time-min]").data("root", this);
+            select = block["time"].find("select[name=cron-time-am-pm]").data("root", this);
 
             if (o.timezoneOpts.enabled) {
-                var timezoneSelect = selectOptions({ text: "", "class":"cron-timezone" });
+                var timezoneSelect = selectOptions({ text: "", name: "cron-timezone" });
                 block["timezone"] = $(span({ text: " in the timezone " + timezoneSelect, 'class': "cron-block cron-block-timezone" }))
                     .appendTo(this)
                     .data("root", this);
@@ -508,14 +516,14 @@
                         var btgt = block[tgt];
                         if (twelve_hour_format) {
                             var hour = parseInt(v["hour"]);
-                            var is_pm = hour >= 12;
+                            var is_pm = hour >= 12;;
                             if (is_pm) {
-                                block[tgt].find(".cron-time-am-pm").val("pm");
+                                block[tgt].find("select[name=cron-time-am-pm]").val("pm");
                                 v["hour"] = hour - 12;
                             }
                         }
-                        var btgt = block[tgt].find("select.cron-time-hour").val(v["hour"]);
-                        btgt = block[tgt].find("select.cron-time-min").val(v["mins"]);
+                        var btgt = block[tgt].find("select[name=cron-time-hour]").val(v["hour"]);
+                        btgt = block[tgt].find("select[name=cron-time-min]").val(v["mins"]);
                     } else if (tgt !== "timezone") {
                         var btgt = block[tgt].find("select");
                         if (btgt.attr("multiple")) {
@@ -534,16 +542,15 @@
         },
 
         timezone : function(timezone_str) {
-            var timezone_select = this.data("block")["timezone"].find("select.cron-timezone");
+            var timezone_select = this.data("block")["timezone"].find("select[name=cron-timezone]");
             return timezone_select.val();
         },
 
         timezoneOffset : function(offset_str) {
-            var timezone_select = this.data("block")["timezone"].find('select.cron-timezone'),
+            var timezone_select = this.data("block")["timezone"].find("select[name=cron-timezone]"),
                 offset = timezone_select.find('option:selected').data('offset');
             return offset;
         }
-
     };
 
     var event_handlers = {
